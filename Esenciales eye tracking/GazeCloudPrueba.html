@@ -1,0 +1,80 @@
+<!-- <script src="https://api.gazerecorder.com/GazeCloudAPI.js"></script> -->
+<script src="./GazeCloudAPI.js"></script>
+
+
+<script type="text/javascript">
+    var x = 0;
+
+    // Creación del socket y envio de mensaje tras conexión
+    var wsUri = "ws://127.0.0.1:3000/SocketTest";
+    var websocket = new WebSocket(wsUri);
+    websocket.onopen = function (e) {
+        websocket.send("OK");
+    };
+
+    // API gaze cloud
+    GazeCloudAPI.OnResult = function (GazeData) {
+        if (GazeData.state == 0)    // 0: valid gaze data; -1 : face tracking lost, 1 : gaze data uncalibrated
+        {
+            var x = GazeData.docX   // gaze x in document coordinates
+            var y = GazeData.docY   // gaze y in document coordinates
+            var t = GazeData.time           // timestamp
+            //document.getElementById("coord_x").innerHTML = x;
+            //document.getElementById("coord_y").innerHTML = y;
+            // Envio de coordenadas por socket
+            //sendCoordinates(Math.round(x), Math.round(y), t);
+            sendCoordinates(Math.round(x), Math.round(y), t);
+        }
+    }
+
+    GazeCloudAPI.OnCalibrationComplete = function () { console.log('gaze Calibration Complete') };
+    GazeCloudAPI.OnResult = PlotGaze;
+
+    // Función para empezar el rastreo de movs
+    function start() {
+        GazeCloudAPI.StartEyeTracking();
+        GazeCloudAPI.SetFps(25);
+    }
+
+    // Función para detener el rastreo de movs
+    function stop() {
+        GazeCloudAPI.StopEyeTracking();
+    }
+
+    // Envio de coordenadas por el socket
+    function sendCoordinates(x, y, t)
+    {
+        websocket.send(x.toString() + "," + y.toString() + "," + t.toString());
+    }
+
+    function fakeCoordinates(x, y)
+    {
+        var fakeX = 0;
+        var fakeY = 0;
+        var timestamp = 0;
+        var j = 0;
+
+        for (var i = 0; i < 1; i++) {
+            fakeX = parseInt(Math.random() * 1366);
+            fakeY = parseInt(Math.random() * 768);
+            timestamp = Date.now();
+            websocket.send(fakeX.toString() + "," + fakeY.toString() + "," + timestamp.toString());
+            //websocket.send(j.toString() + "," + j.toString() + "," + timestamp.toString());
+            //j++;
+        //    if (j == 1000) {
+        //        j = 0;
+        //    }
+        }
+
+        
+    }
+
+</script>
+
+<body>
+    <button onclick="start()">Comenzar</button>
+    <button onclick="stop()">Detener</button>
+    <button onclick="fakeCoordinates()">test socket</button>
+    <!--<p>"Coordenada X: " <span id="coord_x"></span> </p>
+    <p>"Coordenada Y: " <span id="coord_y"></span> </p>-->
+</body>
